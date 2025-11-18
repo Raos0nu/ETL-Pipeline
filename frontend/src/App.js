@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import Dashboard from './components/Dashboard';
 import DataTable from './components/DataTable';
@@ -13,11 +13,12 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [notification, setNotification] = useState(null);
 
-  useEffect(() => {
-    fetchData();
+  const showNotification = useCallback((message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/data');
@@ -30,7 +31,11 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showNotification]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAddData = async (newData) => {
     try {
@@ -73,10 +78,6 @@ function App() {
     }
   };
 
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
 
   return (
     <div className="App">
