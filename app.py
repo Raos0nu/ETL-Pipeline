@@ -6,6 +6,8 @@ import transform
 import sqlite3
 import os
 from datetime import datetime
+import io
+import csv
 
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 CORS(app)
@@ -43,15 +45,36 @@ def health_check():
 
 @app.route('/api/data', methods=['GET'])
 def get_data():
-    """Get all sales data"""
+    """Get all sales data with optional pagination and filtering"""
     try:
         df = extract.extract(DATA_FILE)
         df = transform.transform(df)
-        data = df.to_dict('records')
+        
+        # Date filtering
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        if start_date or end_date:
+            if 'created_at' in df.columns:
+                df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+                if start_date:
+                    df = df[df['created_at'] >= pd.to_datetime(start_date)]
+                if end_date:
+                    df = df[df['created_at'] <= pd.to_datetime(end_date)]
+        
+        # Pagination
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 50))
+        total_records = len(df)
+        total_pages = (total_records + per_page - 1) // per_page
+        
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        paginated_df = df.iloc[start_idx:end_idx]
+        data = paginated_df.to_dict('records')
         
         # Calculate statistics
         stats = {
-            'total_orders': len(df),
+            'total_orders': total_records,
             'total_revenue': float(df['total_price'].sum()),
             'average_order_value': float(df['total_price'].mean()),
             'total_items_sold': int(df['quantity'].sum())
@@ -60,7 +83,13 @@ def get_data():
         return jsonify({
             'success': True,
             'data': data,
-            'stats': stats
+            'stats': stats,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total_records': total_records,
+                'total_pages': total_pages
+            }
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -112,6 +141,36 @@ def add_data():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/data/<int:order_id>', methods=['PUT'])
+def update_data(order_id):
+    """Update a sales record"""
+    try:
+        data = request.json
+        df = extract.extract(DATA_FILE)
+        
+        if order_id not in df['order_id'].values:
+            return jsonify({'success': False, 'error': 'Order ID not found'}), 404
+        
+        # Update the record
+        idx = df[df['order_id'] == order_id].index[0]
+        if 'product' in data:
+            df.at[idx, 'product'] = data['product']
+        if 'quantity' in data:
+            df.at[idx, 'quantity'] = int(data['quantity'])
+        if 'price' in data:
+            df.at[idx, 'price'] = float(data['price'])
+        
+        # Save to CSV
+        df.to_csv(DATA_FILE, index=False)
+        
+        # Transform and save to DB
+        df_transformed = transform.transform(df.copy())
+        save_to_db(df_transformed)
+        
+        return jsonify({'success': True, 'message': f'Order {order_id} updated successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/data/<int:order_id>', methods=['DELETE'])
 def delete_data(order_id):
     """Delete a sales record"""
@@ -124,7 +183,40 @@ def delete_data(order_id):
         df = df[df['order_id'] != order_id]
         df.to_csv(DATA_FILE, index=False)
         
+        # Update database
+        df_transformed = transform.transform(df.copy())
+        save_to_db(df_transformed)
+        
         return jsonify({'success': True, 'message': f'Order {order_id} deleted successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/data/bulk-delete', methods=['POST'])
+def bulk_delete_data():
+    """Delete multiple sales records"""
+    try:
+        data = request.json
+        order_ids = data.get('order_ids', [])
+        
+        if not order_ids:
+            return jsonify({'success': False, 'error': 'No order IDs provided'}), 400
+        
+        df = extract.extract(DATA_FILE)
+        initial_count = len(df)
+        df = df[~df['order_id'].isin(order_ids)]
+        deleted_count = initial_count - len(df)
+        
+        df.to_csv(DATA_FILE, index=False)
+        
+        # Update database
+        df_transformed = transform.transform(df.copy())
+        save_to_db(df_transformed)
+        
+        return jsonify({
+            'success': True,
+            'message': f'{deleted_count} order(s) deleted successfully',
+            'deleted_count': deleted_count
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -168,6 +260,97 @@ def get_product_analytics():
         return jsonify({
             'success': True,
             'data': product_stats.to_dict('records')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/analytics/timeseries', methods=['GET'])
+def get_timeseries_analytics():
+    """Get time series analytics"""
+    try:
+        df = extract.extract(DATA_FILE)
+        df = transform.transform(df)
+        
+        # Add date column if not exists (use created_at or generate from order_id)
+        if 'created_at' not in df.columns:
+            df['created_at'] = pd.to_datetime('2024-01-01') + pd.to_timedelta(df['order_id'], unit='D')
+        else:
+            df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+        
+        # Group by date
+        df['date'] = df['created_at'].dt.date
+        daily_stats = df.groupby('date').agg({
+            'total_price': 'sum',
+            'order_id': 'count',
+            'quantity': 'sum'
+        }).reset_index()
+        
+        daily_stats.columns = ['date', 'revenue', 'orders', 'quantity']
+        daily_stats['date'] = daily_stats['date'].astype(str)
+        
+        return jsonify({
+            'success': True,
+            'data': daily_stats.to_dict('records')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/data/import', methods=['POST'])
+def import_csv():
+    """Import data from CSV file"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Read CSV
+        file_content = file.read()
+        if isinstance(file_content, bytes):
+            file_content = file_content.decode('utf-8')
+        stream = io.StringIO(file_content, newline=None)
+        csv_input = csv.DictReader(stream)
+        
+        # Load existing data
+        df = extract.extract(DATA_FILE)
+        
+        # Prepare new rows
+        new_rows = []
+        for row in csv_input:
+            try:
+                new_row = {
+                    'order_id': int(row.get('order_id', 0)),
+                    'product': row.get('product', ''),
+                    'quantity': int(row.get('quantity', 0)),
+                    'price': float(row.get('price', 0))
+                }
+                new_rows.append(new_row)
+            except (ValueError, KeyError) as e:
+                continue
+        
+        if not new_rows:
+            return jsonify({'success': False, 'error': 'No valid rows found in CSV'}), 400
+        
+        # Add new rows
+        new_df = pd.DataFrame(new_rows)
+        df = pd.concat([df, new_df], ignore_index=True)
+        
+        # Remove duplicates based on order_id (keep last)
+        df = df.drop_duplicates(subset=['order_id'], keep='last')
+        
+        # Save to CSV
+        df.to_csv(DATA_FILE, index=False)
+        
+        # Transform and save to DB
+        df_transformed = transform.transform(df.copy())
+        save_to_db(df_transformed)
+        
+        return jsonify({
+            'success': True,
+            'message': f'{len(new_rows)} record(s) imported successfully',
+            'imported_count': len(new_rows)
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

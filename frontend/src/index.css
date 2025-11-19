@@ -12,6 +12,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  transition: background 0.3s ease;
+}
+
+.dark-mode body {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
 }
 
 code {

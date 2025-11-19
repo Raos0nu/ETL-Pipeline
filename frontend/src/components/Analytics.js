@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
+  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import './Analytics.css';
 
 function Analytics({ salesData }) {
   const [productAnalytics, setProductAnalytics] = useState([]);
+  const [timeSeriesData, setTimeSeriesData] = useState([]);
 
   useEffect(() => {
     fetchProductAnalytics();
+    fetchTimeSeriesData();
   }, [salesData]);
 
   const fetchProductAnalytics = async () => {
@@ -21,6 +23,17 @@ function Analytics({ salesData }) {
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
+    }
+  };
+
+  const fetchTimeSeriesData = async () => {
+    try {
+      const response = await axios.get('/api/analytics/timeseries');
+      if (response.data.success) {
+        setTimeSeriesData(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching time series data:', error);
     }
   };
 
@@ -38,6 +51,55 @@ function Analytics({ salesData }) {
       </div>
 
       <div className="charts-grid">
+        {/* Time Series - Revenue Over Time */}
+        <div className="chart-card full-width">
+          <h3>📈 Revenue Over Time</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={timeSeriesData}>
+              <defs>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#667eea" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Area 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="#667eea" 
+                fillOpacity={1} 
+                fill="url(#colorRevenue)"
+                name="Revenue"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Time Series - Orders Over Time */}
+        <div className="chart-card full-width">
+          <h3>🛒 Orders Over Time</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={timeSeriesData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="orders" 
+                stroke="#4facfe" 
+                strokeWidth={3}
+                name="Number of Orders"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Revenue by Product - Bar Chart */}
         <div className="chart-card">
           <h3>💰 Revenue by Product</h3>
@@ -152,4 +214,3 @@ function Analytics({ salesData }) {
 }
 
 export default Analytics;
-

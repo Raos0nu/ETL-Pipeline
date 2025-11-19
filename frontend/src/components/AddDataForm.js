@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 import './AddDataForm.css';
 
-function AddDataForm({ onAdd }) {
+function AddDataForm({ onAdd, fetchData }) {
   const [formData, setFormData] = useState({
     order_id: '',
     product: '',
@@ -11,6 +13,8 @@ function AddDataForm({ onAdd }) {
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,6 +87,42 @@ function AddDataForm({ onAdd }) {
     }
 
     setSubmitting(false);
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Please upload a CSV file');
+      return;
+    }
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('/api/data/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(`${response.data.imported_count} record(s) imported successfully!`);
+        if (fetchData) {
+          fetchData();
+        }
+      }
+    } catch (error) {
+      toast.error('Error importing file: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const totalPrice = formData.quantity && formData.price 
@@ -180,6 +220,27 @@ function AddDataForm({ onAdd }) {
         </form>
       </div>
 
+      <div className="import-card">
+        <h3>📥 Import CSV File</h3>
+        <p>Upload a CSV file to import multiple records at once.</p>
+        <div className="import-section">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileImport}
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            id="csv-import"
+          />
+          <label htmlFor="csv-import" className="import-btn">
+            {importing ? '⏳ Importing...' : '📁 Choose CSV File'}
+          </label>
+          <p className="import-hint">
+            CSV should have columns: order_id, product, quantity, price
+          </p>
+        </div>
+      </div>
+
       <div className="info-card">
         <h3>💡 Tips</h3>
         <ul>
@@ -188,6 +249,7 @@ function AddDataForm({ onAdd }) {
           <li>Quantity must be a whole number</li>
           <li>Price should include cents (e.g., 9.99)</li>
           <li>The total price is calculated automatically</li>
+          <li>Use CSV import for bulk data entry</li>
         </ul>
       </div>
     </div>
@@ -195,4 +257,3 @@ function AddDataForm({ onAdd }) {
 }
 
 export default AddDataForm;
-

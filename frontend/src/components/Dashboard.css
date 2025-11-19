@@ -32,6 +32,11 @@
   border-left: 4px solid;
 }
 
+.dark-mode .stat-card {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -77,6 +82,10 @@
   font-weight: 700;
 }
 
+.dark-mode .stat-value {
+  color: #f7fafc;
+}
+
 .recent-orders {
   background: white;
   border-radius: 16px;
@@ -85,10 +94,19 @@
   margin-bottom: 2rem;
 }
 
+.dark-mode .recent-orders {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .recent-orders h2 {
   color: #2d3748;
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
+}
+
+.dark-mode .recent-orders h2 {
+  color: #f7fafc;
 }
 
 .orders-list {
@@ -152,10 +170,19 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+.dark-mode .info-section {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .info-section h2 {
   color: #2d3748;
   margin-bottom: 1rem;
   font-size: 1.5rem;
+}
+
+.dark-mode .info-section h2 {
+  color: #f7fafc;
 }
 
 .info-content {

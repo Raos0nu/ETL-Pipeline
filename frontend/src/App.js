@@ -5,33 +5,39 @@ import DataTable from './components/DataTable';
 import AddDataForm from './components/AddDataForm';
 import Analytics from './components/Analytics';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 function App() {
   const [salesData, setSalesData] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [notification, setNotification] = useState(null);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
 
-  const showNotification = useCallback((message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  }, []);
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page = 1, perPage = 50) => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/data');
+      const response = await axios.get(`/api/data?page=${page}&per_page=${perPage}`);
       if (response.data.success) {
         setSalesData(response.data.data);
         setStats(response.data.stats);
+        return response.data.pagination;
       }
     } catch (error) {
-      showNotification('Error fetching data: ' + error.message, 'error');
+      toast.error('Error fetching data: ' + error.message);
     } finally {
       setLoading(false);
     }
-  }, [showNotification]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -41,12 +47,26 @@ function App() {
     try {
       const response = await axios.post('/api/data', newData);
       if (response.data.success) {
-        showNotification('Data added successfully!', 'success');
+        toast.success('Data added successfully!');
         fetchData();
         return true;
       }
     } catch (error) {
-      showNotification('Error adding data: ' + error.message, 'error');
+      toast.error('Error adding data: ' + error.message);
+      return false;
+    }
+  };
+
+  const handleUpdateData = async (orderId, updatedData) => {
+    try {
+      const response = await axios.put(`/api/data/${orderId}`, updatedData);
+      if (response.data.success) {
+        toast.success('Data updated successfully!');
+        fetchData();
+        return true;
+      }
+    } catch (error) {
+      toast.error('Error updating data: ' + error.message);
       return false;
     }
   };
@@ -55,11 +75,23 @@ function App() {
     try {
       const response = await axios.delete(`/api/data/${orderId}`);
       if (response.data.success) {
-        showNotification('Data deleted successfully!', 'success');
+        toast.success('Data deleted successfully!');
         fetchData();
       }
     } catch (error) {
-      showNotification('Error deleting data: ' + error.message, 'error');
+      toast.error('Error deleting data: ' + error.message);
+    }
+  };
+
+  const handleBulkDelete = async (orderIds) => {
+    try {
+      const response = await axios.post('/api/data/bulk-delete', { order_ids: orderIds });
+      if (response.data.success) {
+        toast.success(`${response.data.deleted_count} record(s) deleted successfully!`);
+        fetchData();
+      }
+    } catch (error) {
+      toast.error('Error deleting data: ' + error.message);
     }
   };
 
@@ -68,11 +100,11 @@ function App() {
     try {
       const response = await axios.post('/api/etl/run');
       if (response.data.success) {
-        showNotification(`ETL Pipeline completed! Processed ${response.data.records_processed} records`, 'success');
+        toast.success(`ETL Pipeline completed! Processed ${response.data.records_processed} records`);
         fetchData();
       }
     } catch (error) {
-      showNotification('Error running ETL: ' + error.message, 'error');
+      toast.error('Error running ETL: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -87,21 +119,24 @@ function App() {
             <h1>📊 ETL Pipeline Dashboard</h1>
             <p>Sales Data Management System</p>
           </div>
-          <button 
-            className="etl-button"
-            onClick={handleRunETL}
-            disabled={loading}
-          >
-            {loading ? '⏳ Running...' : '🚀 Run ETL Pipeline'}
-          </button>
+          <div className="header-actions">
+            <button 
+              className="theme-toggle"
+              onClick={() => setDarkMode(!darkMode)}
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+            <button 
+              className="etl-button"
+              onClick={handleRunETL}
+              disabled={loading}
+            >
+              {loading ? '⏳ Running...' : '🚀 Run ETL Pipeline'}
+            </button>
+          </div>
         </div>
       </header>
-
-      {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
-        </div>
-      )}
 
       <nav className="tab-navigation">
         <button 
@@ -138,11 +173,17 @@ function App() {
         )}
         
         {activeTab === 'data' && (
-          <DataTable data={salesData} onDelete={handleDeleteData} />
+          <DataTable 
+            data={salesData} 
+            onDelete={handleDeleteData}
+            onUpdate={handleUpdateData}
+            onBulkDelete={handleBulkDelete}
+            fetchData={fetchData}
+          />
         )}
         
         {activeTab === 'add' && (
-          <AddDataForm onAdd={handleAddData} />
+          <AddDataForm onAdd={handleAddData} fetchData={fetchData} />
         )}
         
         {activeTab === 'analytics' && (

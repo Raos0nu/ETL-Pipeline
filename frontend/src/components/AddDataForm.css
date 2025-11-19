@@ -12,16 +12,29 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+.dark-mode .form-card {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .form-card h2 {
   color: #2d3748;
   margin-bottom: 0.5rem;
   font-size: 1.75rem;
 }
 
+.dark-mode .form-card h2 {
+  color: #f7fafc;
+}
+
 .form-description {
   color: #718096;
   margin-bottom: 2rem;
   line-height: 1.6;
+}
+
+.dark-mode .form-description {
+  color: #a0aec0;
 }
 
 .add-data-form {
@@ -53,6 +66,13 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   font-family: inherit;
+  background: white;
+}
+
+.dark-mode .form-group input {
+  background: #1a202c;
+  border-color: #4a5568;
+  color: #f7fafc;
 }
 
 .form-group input:focus {
@@ -115,6 +135,60 @@
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.import-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  align-self: start;
+}
+
+.dark-mode .import-card {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
+.import-card h3 {
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.dark-mode .import-card h3 {
+  color: #f7fafc;
+}
+
+.import-section {
+  margin-top: 1rem;
+}
+
+.import-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.875rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.import-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.import-hint {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.dark-mode .import-hint {
+  color: #a0aec0;
 }
 
 .info-card {

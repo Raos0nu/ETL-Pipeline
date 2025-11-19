@@ -13,9 +13,17 @@
   margin-bottom: 0.5rem;
 }
 
+.dark-mode .analytics-header h2 {
+  color: #f7fafc;
+}
+
 .analytics-header p {
   color: #718096;
   font-size: 1.1rem;
+}
+
+.dark-mode .analytics-header p {
+  color: #a0aec0;
 }
 
 .charts-grid {
@@ -33,6 +41,15 @@
   transition: all 0.3s ease;
 }
 
+.chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.dark-mode .chart-card {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .chart-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -44,6 +61,10 @@
   font-size: 1.25rem;
 }
 
+.dark-mode .chart-card h3 {
+  color: #f7fafc;
+}
+
 .performance-table-card {
   background: white;
   border-radius: 16px;
@@ -51,10 +72,19 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+.dark-mode .performance-table-card {
+  background: #2d3748;
+  color: #f7fafc;
+}
+
 .performance-table-card h3 {
   color: #2d3748;
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
+}
+
+.dark-mode .performance-table-card h3 {
+  color: #f7fafc;
 }
 
 .performance-table-wrapper {
