@@ -23,7 +23,7 @@ function App() {
     localStorage.setItem('darkMode', darkMode);
   }, [darkMode]);
 
-  const fetchData = useCallback(async (page = 1, perPage = 50) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10000) => {
     setLoading(true);
     try {
       const response = await axios.get(`/api/data?page=${page}&per_page=${perPage}`);

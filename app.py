@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import io
 import csv
+import math
 
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 CORS(app)
@@ -50,6 +51,15 @@ def get_data():
         df = extract.extract(DATA_FILE)
         df = transform.transform(df)
         
+        # Filter out invalid rows
+        df = df[df['order_id'].notna() & (df['order_id'] > 0)]
+        df = df[df['product'].notna() & (df['product'].astype(str).str.strip() != '')]
+        df = df[df['quantity'].notna() & (df['quantity'] > 0)]
+        df = df[df['price'].notna() & (df['price'] > 0)]
+        
+        # Replace NaN values with None (which becomes null in JSON)
+        df = df.fillna('')
+        
         # Date filtering
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
@@ -65,20 +75,31 @@ def get_data():
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 50))
         total_records = len(df)
-        total_pages = (total_records + per_page - 1) // per_page
+        total_pages = (total_records + per_page - 1) // per_page if total_records > 0 else 1
         
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
-        paginated_df = df.iloc[start_idx:end_idx]
+        paginated_df = df.iloc[start_idx:end_idx].copy()
+        
+        # Replace NaN values with None before converting to dict
+        paginated_df = paginated_df.where(pd.notna(paginated_df), None)
         data = paginated_df.to_dict('records')
         
         # Calculate statistics
-        stats = {
-            'total_orders': total_records,
-            'total_revenue': float(df['total_price'].sum()),
-            'average_order_value': float(df['total_price'].mean()),
-            'total_items_sold': int(df['quantity'].sum())
-        }
+        if total_records > 0:
+            stats = {
+                'total_orders': total_records,
+                'total_revenue': float(df['total_price'].sum()),
+                'average_order_value': float(df['total_price'].mean()),
+                'total_items_sold': int(df['quantity'].sum())
+            }
+        else:
+            stats = {
+                'total_orders': 0,
+                'total_revenue': 0.0,
+                'average_order_value': 0.0,
+                'total_items_sold': 0
+            }
         
         return jsonify({
             'success': True,
@@ -116,15 +137,30 @@ def add_data():
             if field not in data:
                 return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
         
+        # Validate data values
+        order_id = int(data['order_id'])
+        product = str(data['product']).strip()
+        quantity = int(data['quantity'])
+        price = float(data['price'])
+        
+        if order_id <= 0:
+            return jsonify({'success': False, 'error': 'Order ID must be greater than 0'}), 400
+        if not product:
+            return jsonify({'success': False, 'error': 'Product name cannot be empty'}), 400
+        if quantity <= 0:
+            return jsonify({'success': False, 'error': 'Quantity must be greater than 0'}), 400
+        if price <= 0:
+            return jsonify({'success': False, 'error': 'Price must be greater than 0'}), 400
+        
         # Load existing data
         df = extract.extract(DATA_FILE)
         
         # Create new row
         new_row = {
-            'order_id': int(data['order_id']),
-            'product': data['product'],
-            'quantity': int(data['quantity']),
-            'price': float(data['price'])
+            'order_id': order_id,
+            'product': product,
+            'quantity': quantity,
+            'price': price
         }
         
         new_row_df = pd.DataFrame([new_row])
@@ -248,6 +284,12 @@ def get_product_analytics():
         df = extract.extract(DATA_FILE)
         df = transform.transform(df)
         
+        # Filter out invalid rows
+        df = df[df['order_id'].notna() & (df['order_id'] > 0)]
+        df = df[df['product'].notna() & (df['product'].astype(str).str.strip() != '')]
+        df = df[df['quantity'].notna() & (df['quantity'] > 0)]
+        df = df[df['price'].notna() & (df['price'] > 0)]
+        
         # Group by product
         product_stats = df.groupby('product').agg({
             'quantity': 'sum',
@@ -257,9 +299,13 @@ def get_product_analytics():
         
         product_stats.columns = ['product', 'total_quantity', 'total_revenue', 'order_count']
         
+        # Replace NaN values
+        product_stats = product_stats.where(pd.notna(product_stats), None)
+        data = product_stats.to_dict('records')
+        
         return jsonify({
             'success': True,
-            'data': product_stats.to_dict('records')
+            'data': data
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -270,6 +316,12 @@ def get_timeseries_analytics():
     try:
         df = extract.extract(DATA_FILE)
         df = transform.transform(df)
+        
+        # Filter out invalid rows
+        df = df[df['order_id'].notna() & (df['order_id'] > 0)]
+        df = df[df['product'].notna() & (df['product'].astype(str).str.strip() != '')]
+        df = df[df['quantity'].notna() & (df['quantity'] > 0)]
+        df = df[df['price'].notna() & (df['price'] > 0)]
         
         # Add date column if not exists (use created_at or generate from order_id)
         if 'created_at' not in df.columns:
@@ -288,9 +340,13 @@ def get_timeseries_analytics():
         daily_stats.columns = ['date', 'revenue', 'orders', 'quantity']
         daily_stats['date'] = daily_stats['date'].astype(str)
         
+        # Replace NaN values
+        daily_stats = daily_stats.where(pd.notna(daily_stats), None)
+        data = daily_stats.to_dict('records')
+        
         return jsonify({
             'success': True,
-            'data': daily_stats.to_dict('records')
+            'data': data
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -320,14 +376,23 @@ def import_csv():
         new_rows = []
         for row in csv_input:
             try:
+                order_id = int(row.get('order_id', 0))
+                product = str(row.get('product', '')).strip()
+                quantity = int(row.get('quantity', 0))
+                price = float(row.get('price', 0))
+                
+                # Validate row data - skip invalid rows
+                if order_id <= 0 or not product or quantity <= 0 or price <= 0:
+                    continue
+                
                 new_row = {
-                    'order_id': int(row.get('order_id', 0)),
-                    'product': row.get('product', ''),
-                    'quantity': int(row.get('quantity', 0)),
-                    'price': float(row.get('price', 0))
+                    'order_id': order_id,
+                    'product': product,
+                    'quantity': quantity,
+                    'price': price
                 }
                 new_rows.append(new_row)
-            except (ValueError, KeyError) as e:
+            except (ValueError, KeyError, TypeError) as e:
                 continue
         
         if not new_rows:

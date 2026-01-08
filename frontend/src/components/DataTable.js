@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './DataTable.css';
 
 function DataTable({ data, onDelete, onUpdate, onBulkDelete, fetchData }) {
@@ -10,6 +10,15 @@ function DataTable({ data, onDelete, onUpdate, onBulkDelete, fetchData }) {
   const [editForm, setEditForm] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const prevDataLengthRef = useRef(data.length);
+
+  // Reset to page 1 when data length increases significantly (e.g., after CSV import)
+  useEffect(() => {
+    if (data.length > prevDataLengthRef.current + 10) {
+      setCurrentPage(1);
+    }
+    prevDataLengthRef.current = data.length;
+  }, [data.length]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
