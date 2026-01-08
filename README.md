@@ -374,22 +374,6 @@ The project includes Vercel configuration. See `vercel.json` and `api/index.py` 
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📝 License
-
-This project is open source and available under the MIT License.
-
-## 👨‍💻 Author
-
-Built with ❤️ for data engineering enthusiasts
-
-## 🙏 Acknowledgments
-
-- React team for the amazing framework
-- Flask team for the lightweight backend
-- Recharts for beautiful visualizations
-- React Hot Toast for elegant notifications
-- The open-source community
-
 ---
 
 **Enjoy managing your sales data with style! 🎉**
