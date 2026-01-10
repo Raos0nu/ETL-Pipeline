@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  etl-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etl-pipeline
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DEBUG=False
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+      - DATABASE_URL=sqlite:///data/sales.db
+      - DATA_FILE=data/sample_sales.csv
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./sales.db:/app/sales.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add PostgreSQL for production use
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: etl-postgres
+  #   environment:
+  #     - POSTGRES_DB=sales_db
+  #     - POSTGRES_USER=etl_user
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:

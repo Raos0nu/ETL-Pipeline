@@ -2,6 +2,19 @@
 
 A modern, full-stack Data Engineering ETL Pipeline with a beautiful React frontend and Flask backend API. This application allows you to extract, transform, and load sales data while providing real-time analytics and visualizations.
 
+## 🚀 **NEW: Modernized Architecture Available!**
+
+This project has been modernized with enterprise-grade features including:
+- ✅ **Configuration Management** - Environment-based configuration
+- ✅ **Structured Logging** - JSON and text logging with context
+- ✅ **SQLAlchemy ORM** - Modern database abstraction layer
+- ✅ **Data Validation** - Pydantic models for request/response validation
+- ✅ **Data Quality Checks** - Automatic data quality validation and reporting
+- ✅ **Docker Support** - Containerization with Docker and Docker Compose
+- ✅ **Multiple Data Sources** - Support for CSV, JSON, Excel, APIs, and databases
+
+**👉 See [MODERNIZATION_GUIDE.md](MODERNIZATION_GUIDE.md) for details and migration instructions.**
+
 ## ✨ Features
 
 ### Core Features
@@ -46,6 +59,29 @@ Before you begin, ensure you have the following installed:
 - npm or yarn
 
 ## 🚀 Installation & Setup
+
+### Quick Start (Modernized App)
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Set up environment (optional - defaults work for local dev)
+cp .env.example .env
+
+# 3. Run modernized app
+python app_modern.py
+```
+
+**👉 See [QUICK_START_MODERN.md](QUICK_START_MODERN.md) for detailed quick start guide.**
+
+### Docker (Recommended for Production)
+
+```bash
+docker-compose up --build
+```
+
+### Traditional Setup
 
 ### 1. Clone the Repository
 
