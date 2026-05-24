@@ -3,26 +3,9 @@
   "name": "dataflow-studio",
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/build",
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/(.*)",     "destination": "/index.html"   }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*"                              },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS"    },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization,X-Request-ID" },
-        { "key": "Cache-Control",                "value": "no-store"                       },
-        { "key": "X-Content-Type-Options",       "value": "nosniff"                        }
-      ]
-    }
   ],
   "env": {
     "ENVIRONMENT": "production",
