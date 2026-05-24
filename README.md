@@ -271,8 +271,3 @@ Shipped in `data/sample_sales.csv` — 50 orders across 5 product categories. To
 
 📧 sonuyadav97297@gmail.com
 
----
-
-## 📄 License
-
-MIT © 2025 Ralph
