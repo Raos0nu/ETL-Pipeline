@@ -267,9 +267,9 @@ Shipped in `data/sample_sales.csv` — 50 orders across 5 product categories. To
 
 ## 👤 Author
 
-**Ralph** — Final-year CSE student · Backend & Data Engineering
+**Sonu Yadav** — Final-year CSE student · Backend & Data Engineering
 
-📧 ralpher98@gmail.com
+📧 sonuyadav97297@gmail.com
 
 ---
 
