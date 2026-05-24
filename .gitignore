@@ -59,6 +59,10 @@ frontend/.env.production.local
 .DS_Store
 Thumbs.db
 
+# ── Vercel (not used) ────────────────────────────────────────────
+vercel.json
+.vercelignore
+
 # ── Legacy root-level files (safe to delete manually) ────────────
 app.py
 app_modern.py
