@@ -1,4 +1,8 @@
-flask==3.0.0
-flask-cors==4.0.0
-pandas==2.1.3
+# DataFlow Studio — Vercel serverless requirements
+# Keep minimal: only what api/index.py directly imports.
 
+flask==3.0.3
+flask-cors==4.0.1
+pandas==2.2.2
+numpy==1.26.4
+python-dotenv==1.0.1

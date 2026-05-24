@@ -1,193 +1,109 @@
-.analytics-container {
-  animation: fadeIn 0.5s ease;
-}
+/* ── KPI strip ───────────────────────────────────────────────────────────── */
+.analytics-page { display: flex; flex-direction: column; gap: 22px; }
 
-.analytics-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.analytics-header h2 {
-  color: #2d3748;
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.dark-mode .analytics-header h2 {
-  color: #f7fafc;
-}
-
-.analytics-header p {
-  color: #718096;
-  font-size: 1.1rem;
-}
-
-.dark-mode .analytics-header p {
-  color: #a0aec0;
-}
-
-.charts-grid {
+.kpi-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 4px;
 }
 
-.chart-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+.kpi-card {
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
 }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
-.chart-card.full-width {
-  grid-column: 1 / -1;
+.kpi-value {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.dark-mode .chart-card {
-  background: #2d3748;
-  color: #f7fafc;
-}
-
-.chart-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-}
-
-.chart-card h3 {
-  color: #2d3748;
-  margin-bottom: 1.5rem;
-  font-size: 1.25rem;
-}
-
-.dark-mode .chart-card h3 {
-  color: #f7fafc;
-}
-
-.performance-table-card {
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.dark-mode .performance-table-card {
-  background: #2d3748;
-  color: #f7fafc;
-}
-
-.performance-table-card h3 {
-  color: #2d3748;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-}
-
-.dark-mode .performance-table-card h3 {
-  color: #f7fafc;
-}
-
-.performance-table-wrapper {
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.performance-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.performance-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.performance-table th {
-  padding: 1rem 1.25rem;
-  text-align: left;
+.kpi-label {
+  font-size: .75rem;
   font-weight: 600;
-  font-size: 0.95rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: .06em;
+  margin-top: 4px;
 }
 
-.performance-table tbody tr {
-  border-bottom: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
-}
+.kpi-indigo  { border-left: 3px solid var(--brand-primary);   }
+.kpi-emerald { border-left: 3px solid var(--brand-success);   }
+.kpi-violet  { border-left: 3px solid var(--brand-secondary); }
+.kpi-cyan    { border-left: 3px solid var(--brand-accent);    }
 
-.performance-table tbody tr:hover {
-  background: #f7fafc;
-}
+/* ── Charts grid ─────────────────────────────────────────────────────────── */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.chart-card  { padding: 22px; }
+.full-width  { grid-column: 1 / -1; }
 
-.performance-table tbody tr:last-child {
-  border-bottom: none;
+.chart-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
 }
+.chart-title { font-size: .95rem; font-weight: 700; color: var(--text-primary); }
+.chart-skeleton { padding: 8px 0; }
 
-.performance-table td {
-  padding: 1rem 1.25rem;
-  color: #4a5568;
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+.chart-tooltip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+  min-width: 140px;
+  font-family: 'Inter', sans-serif;
 }
+.tooltip-label { font-size:.78rem; font-weight:700; color:var(--text-secondary); margin-bottom:7px; border-bottom:1px solid var(--border-base); padding-bottom:5px; }
+.tooltip-row   { display:flex; align-items:center; gap:7px; margin-top:4px; font-size:.82rem; }
+.tooltip-dot   { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.tooltip-name  { color:var(--text-secondary); flex:1; }
+.tooltip-val   { font-weight:700; color:var(--text-primary); }
 
-.product-name {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: 600;
-  color: #2d3748;
+/* ── Performance table ───────────────────────────────────────────────────── */
+.perf-table-card { padding: 22px; }
+.table-scroll    { overflow-x: auto; }
+
+.perf-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+
+.perf-table th {
+  text-align:left; padding:10px 14px;
+  font-size:.73rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.06em; color:var(--text-muted);
+  border-bottom:1px solid var(--border-base); white-space:nowrap;
 }
+.perf-table td { padding:12px 14px; border-bottom:1px solid var(--border-base); vertical-align:middle; }
+.perf-table tbody tr:hover         { background:var(--bg-surface); }
+.perf-table tbody tr:last-child td { border-bottom:none; }
 
-.product-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
+.rank-cell  { width:44px; }
+.rank-badge {
+  width:26px; height:26px; border-radius:8px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:.75rem; font-weight:800; color:#fff;
 }
+.product-name-cell { display:flex; align-items:center; gap:9px; font-weight:600; }
+.color-dot         { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.rev-cell          { font-weight:700; color:var(--brand-success); }
 
-.revenue {
-  font-weight: 700;
-  color: #48bb78;
-}
+.share-cell    { display:flex; align-items:center; gap:8px; }
+.share-bar-bg  { width:80px; height:6px; background:var(--border-base); border-radius:var(--radius-full); overflow:hidden; }
+.share-bar-fill{ height:100%; border-radius:var(--radius-full); transition:width .5s ease; }
+.share-pct     { font-size:.78rem; font-weight:600; color:var(--text-secondary); min-width:38px; }
 
-/* Recharts customization */
-.recharts-tooltip-wrapper {
-  outline: none;
-}
+/* ── Error ───────────────────────────────────────────────────────────────── */
+.analytics-error { padding:48px 32px; text-align:center; color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; gap:12px; }
+.error-icon      { font-size:2.2rem; color:var(--brand-warning); }
 
-.recharts-default-tooltip {
-  background: rgba(255, 255, 255, 0.98) !important;
-  border: none !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-  padding: 1rem !important;
-}
-
-.recharts-tooltip-label {
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 0.5rem;
-}
-
-@media (max-width: 1200px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .analytics-header h2 {
-    font-size: 1.5rem;
-  }
-  
-  .chart-card {
-    padding: 1.5rem;
-  }
-  
-  .performance-table th,
-  .performance-table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.9rem;
-  }
-}
-
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+@media (max-width: 540px) { .kpi-strip   { grid-template-columns: repeat(2, 1fr); } }

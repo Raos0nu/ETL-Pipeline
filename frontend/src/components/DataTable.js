@@ -1,324 +1,336 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import './DataTable.css';
+import { exportCSV, importCSV } from '../services/api';
+import { toast } from 'react-hot-toast';
 
-function DataTable({ data, onDelete, onUpdate, onBulkDelete, fetchData }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState('order_id');
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [selectedRows, setSelectedRows] = useState(new Set());
-  const [editingRow, setEditingRow] = useState(null);
-  const [editForm, setEditForm] = useState({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const prevDataLengthRef = useRef(data.length);
+const fmtUSD = (n) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0);
 
-  // Reset to page 1 when data length increases significantly (e.g., after CSV import)
-  useEffect(() => {
-    if (data.length > prevDataLengthRef.current + 10) {
-      setCurrentPage(1);
-    }
-    prevDataLengthRef.current = data.length;
-  }, [data.length]);
+// ── Skeleton rows ─────────────────────────────────────────────────────────────
+function SkeletonRows({ count = 8 }) {
+  return [...Array(count)].map((_, i) => (
+    <tr key={i} className="skeleton-row">
+      {[...Array(7)].map((_, j) => (
+        <td key={j}><div className="skeleton" style={{ height: 16, borderRadius: 6 }} /></td>
+      ))}
+    </tr>
+  ));
+}
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount);
-  };
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const filteredData = data.filter(item =>
-    item.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.order_id.toString().includes(searchTerm)
-  );
-
-  const sortedData = [...filteredData].sort((a, b) => {
-    let aVal = a[sortField];
-    let bVal = b[sortField];
-    
-    if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
-    }
-    
-    if (sortDirection === 'asc') {
-      return aVal > bVal ? 1 : -1;
-    } else {
-      return aVal < bVal ? 1 : -1;
-    }
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedData.length / perPage);
-  const startIdx = (currentPage - 1) * perPage;
-  const endIdx = startIdx + perPage;
-  const paginatedData = sortedData.slice(startIdx, endIdx);
-
-  const handleDelete = (orderId) => {
-    if (window.confirm(`Are you sure you want to delete order #${orderId}?`)) {
-      onDelete(orderId);
-    }
-  };
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedRows(new Set(paginatedData.map(item => item.order_id)));
-    } else {
-      setSelectedRows(new Set());
-    }
-  };
-
-  const handleSelectRow = (orderId) => {
-    const newSelected = new Set(selectedRows);
-    if (newSelected.has(orderId)) {
-      newSelected.delete(orderId);
-    } else {
-      newSelected.add(orderId);
-    }
-    setSelectedRows(newSelected);
-  };
-
-  const handleBulkDelete = () => {
-    if (selectedRows.size === 0) return;
-    if (window.confirm(`Are you sure you want to delete ${selectedRows.size} selected record(s)?`)) {
-      onBulkDelete(Array.from(selectedRows));
-      setSelectedRows(new Set());
-    }
-  };
-
-  const handleEdit = (row) => {
-    setEditingRow(row.order_id);
-    setEditForm({
-      product: row.product,
-      quantity: row.quantity,
-      price: row.price
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    const success = await onUpdate(editingRow, editForm);
-    if (success) {
-      setEditingRow(null);
-      setEditForm({});
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingRow(null);
-    setEditForm({});
-  };
-
+// ── Inline edit cell ──────────────────────────────────────────────────────────
+function EditCell({ type = 'text', value, onChange, placeholder }) {
   return (
-    <div className="data-table-container">
-      <div className="table-header">
-        <h2>📋 Sales Data Table</h2>
-        <div className="table-controls">
-          <input
-            type="text"
-            placeholder="🔍 Search by product or order ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          <div className="table-actions">
-            {selectedRows.size > 0 && (
-              <button className="bulk-delete-btn" onClick={handleBulkDelete}>
-                🗑️ Delete Selected ({selectedRows.size})
-              </button>
-            )}
-            <span className="record-count">{sortedData.length} records</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="pagination-controls-top">
-        <div className="per-page-selector">
-          <label>Show:</label>
-          <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-        </div>
-        <div className="page-info">
-          Page {currentPage} of {totalPages || 1}
-        </div>
-      </div>
-
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={paginatedData.length > 0 && paginatedData.every(item => selectedRows.has(item.order_id))}
-                  onChange={handleSelectAll}
-                />
-              </th>
-              <th onClick={() => handleSort('order_id')} className="sortable">
-                Order ID {sortField === 'order_id' && (sortDirection === 'asc' ? '▲' : '▼')}
-              </th>
-              <th onClick={() => handleSort('product')} className="sortable">
-                Product {sortField === 'product' && (sortDirection === 'asc' ? '▲' : '▼')}
-              </th>
-              <th onClick={() => handleSort('quantity')} className="sortable">
-                Quantity {sortField === 'quantity' && (sortDirection === 'asc' ? '▲' : '▼')}
-              </th>
-              <th onClick={() => handleSort('price')} className="sortable">
-                Price {sortField === 'price' && (sortDirection === 'asc' ? '▲' : '▼')}
-              </th>
-              <th onClick={() => handleSort('total_price')} className="sortable">
-                Total {sortField === 'total_price' && (sortDirection === 'asc' ? '▲' : '▼')}
-              </th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedData.map((item, index) => (
-              <tr key={index} className={selectedRows.has(item.order_id) ? 'selected' : ''}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(item.order_id)}
-                    onChange={() => handleSelectRow(item.order_id)}
-                  />
-                </td>
-                <td className="order-id-cell">#{item.order_id}</td>
-                <td className="product-cell">
-                  {editingRow === item.order_id ? (
-                    <input
-                      type="text"
-                      value={editForm.product}
-                      onChange={(e) => setEditForm({...editForm, product: e.target.value})}
-                      className="edit-input"
-                    />
-                  ) : (
-                    item.product
-                  )}
-                </td>
-                <td>
-                  {editingRow === item.order_id ? (
-                    <input
-                      type="number"
-                      value={editForm.quantity}
-                      onChange={(e) => setEditForm({...editForm, quantity: e.target.value})}
-                      className="edit-input"
-                    />
-                  ) : (
-                    item.quantity
-                  )}
-                </td>
-                <td>
-                  {editingRow === item.order_id ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm({...editForm, price: e.target.value})}
-                      className="edit-input"
-                    />
-                  ) : (
-                    formatCurrency(item.price)
-                  )}
-                </td>
-                <td className="total-cell">
-                  {editingRow === item.order_id ? (
-                    formatCurrency((parseFloat(editForm.quantity || 0) * parseFloat(editForm.price || 0)))
-                  ) : (
-                    formatCurrency(item.total_price)
-                  )}
-                </td>
-                <td>
-                  {editingRow === item.order_id ? (
-                    <div className="edit-actions">
-                      <button className="save-btn" onClick={handleSaveEdit}>✓</button>
-                      <button className="cancel-btn" onClick={handleCancelEdit}>✕</button>
-                    </div>
-                  ) : (
-                    <div className="row-actions">
-                      <button 
-                        className="edit-btn"
-                        onClick={() => handleEdit(item)}
-                        title="Edit order"
-                      >
-                        ✏️
-                      </button>
-                      <button 
-                        className="delete-btn"
-                        onClick={() => handleDelete(item.order_id)}
-                        title="Delete order"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {sortedData.length === 0 && (
-        <div className="no-data">
-          <p>No data found matching your search.</p>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="pagination-controls">
-          <button 
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="page-btn"
-          >
-            ← Previous
-          </button>
-          <div className="page-numbers">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`page-btn ${currentPage === pageNum ? 'active' : ''}`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-          <button 
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="page-btn"
-          >
-            Next →
-          </button>
-        </div>
-      )}
-    </div>
+    <input
+      className="edit-inline"
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      step={type === 'number' ? '0.01' : undefined}
+      autoFocus
+    />
   );
 }
 
-export default DataTable;
+// ── Main component ────────────────────────────────────────────────────────────
+export default function DataTable({ data, loading, onDelete, onUpdate, onBulkDelete, onRefresh }) {
+  const [search,       setSearch]       = useState('');
+  const [sortField,    setSortField]    = useState('order_id');
+  const [sortDir,      setSortDir]      = useState('asc');
+  const [selected,     setSelected]     = useState(new Set());
+  const [editingId,    setEditingId]    = useState(null);
+  const [editForm,     setEditForm]     = useState({});
+  const [page,         setPage]         = useState(1);
+  const [perPage,      setPerPage]      = useState(10);
+  const [importing,    setImporting]    = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Reset page on data change
+  const prevLenRef = useRef(data.length);
+  useEffect(() => {
+    if (data.length !== prevLenRef.current) {
+      setPage(1);
+      prevLenRef.current = data.length;
+    }
+  }, [data.length]);
+
+  // ── Filter + sort ──────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return data.filter(r =>
+      !q ||
+      String(r.order_id).includes(q) ||
+      (r.product || '').toLowerCase().includes(q)
+    );
+  }, [data, search]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let av = a[sortField], bv = b[sortField];
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if (av === bv) return 0;
+      const cmp = av > bv ? 1 : -1;
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [filtered, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const paginated  = sorted.slice((page - 1) * perPage, page * perPage);
+
+  const toggleSort = (field) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
+
+  const sortIcon = (field) =>
+    sortField !== field ? '⇅' : sortDir === 'asc' ? '↑' : '↓';
+
+  // ── Selection ──────────────────────────────────────────────────────────────
+  const toggleAll = (e) => {
+    setSelected(e.target.checked ? new Set(paginated.map(r => r.order_id)) : new Set());
+  };
+  const toggleRow = (id) => {
+    setSelected(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  // ── Edit ───────────────────────────────────────────────────────────────────
+  const startEdit = (row) => {
+    setEditingId(row.order_id);
+    setEditForm({ product: row.product, quantity: row.quantity, price: row.price });
+  };
+
+  const saveEdit = async () => {
+    const ok = await onUpdate(editingId, {
+      product:  editForm.product,
+      quantity: Number(editForm.quantity),
+      price:    Number(editForm.price),
+    });
+    if (ok) { setEditingId(null); setEditForm({}); }
+  };
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  const confirmDelete = (id) => {
+    if (window.confirm(`Delete order #${id}? This cannot be undone.`)) onDelete(id);
+  };
+
+  const confirmBulkDelete = () => {
+    if (!selected.size) return;
+    if (window.confirm(`Delete ${selected.size} selected record(s)?`)) {
+      onBulkDelete(Array.from(selected));
+      setSelected(new Set());
+    }
+  };
+
+  // ── CSV import ─────────────────────────────────────────────────────────────
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    const tid = toast.loading(`Importing ${file.name}…`);
+    try {
+      const res = await importCSV(file);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Import successful', { id: tid });
+        onRefresh?.();
+      }
+    } catch (err) {
+      toast.error(err.message || 'Import failed', { id: tid });
+    } finally {
+      setImporting(false);
+      e.target.value = '';
+    }
+  };
+
+  // ── Pagination buttons ─────────────────────────────────────────────────────
+  const pageButtons = useMemo(() => {
+    const btns = [];
+    const delta = 2;
+    const lo = Math.max(1, page - delta);
+    const hi = Math.min(totalPages, page + delta);
+    if (lo > 1) { btns.push(1); if (lo > 2) btns.push('…'); }
+    for (let i = lo; i <= hi; i++) btns.push(i);
+    if (hi < totalPages) { if (hi < totalPages - 1) btns.push('…'); btns.push(totalPages); }
+    return btns;
+  }, [page, totalPages]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="datatable-page animate-slide-up">
+      {/* Header */}
+      <div className="section-header">
+        <div>
+          <h1 className="section-title">Data Table</h1>
+          <p className="section-subtitle">
+            {sorted.length.toLocaleString()} record{sorted.length !== 1 ? 's' : ''}
+            {search ? ` matching "${search}"` : ''}
+          </p>
+        </div>
+        <div className="dt-toolbar">
+          {selected.size > 0 && (
+            <button className="btn btn-danger" onClick={confirmBulkDelete}>
+              🗑 Delete ({selected.size})
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={() => exportCSV()} title="Export all as CSV">
+            ↓ Export CSV
+          </button>
+          <label className={`btn btn-secondary ${importing ? 'loading' : ''}`} title="Import CSV">
+            {importing ? <><span className="spinner-sm" /> Importing…</> : '↑ Import CSV'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+          </label>
+          <button className="btn btn-secondary" onClick={onRefresh} title="Refresh data">
+            ↺
+          </button>
+        </div>
+      </div>
+
+      {/* Controls bar */}
+      <div className="dt-controls card">
+        <input
+          className="input dt-search"
+          type="text"
+          placeholder="Search by product or order ID…"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        />
+        <div className="dt-per-page">
+          <label className="per-page-label">Show</label>
+          <select
+            className="input per-page-select"
+            value={perPage}
+            onChange={(e) => { setPerPage(+e.target.value); setPage(1); }}
+          >
+            {[10, 25, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <span className="per-page-label">per page</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="card dt-card">
+        <div className="table-scroll">
+          <table className="dt-table">
+            <thead>
+              <tr>
+                <th className="check-col">
+                  <input
+                    type="checkbox"
+                    checked={paginated.length > 0 && paginated.every(r => selected.has(r.order_id))}
+                    onChange={toggleAll}
+                  />
+                </th>
+                {[
+                  { key: 'order_id',    label: 'Order ID'  },
+                  { key: 'product',     label: 'Product'   },
+                  { key: 'quantity',    label: 'Qty'       },
+                  { key: 'price',       label: 'Unit Price'},
+                  { key: 'total_price', label: 'Total'     },
+                ].map(col => (
+                  <th key={col.key} className="sortable" onClick={() => toggleSort(col.key)}>
+                    {col.label}
+                    <span className="sort-icon">{sortIcon(col.key)}</span>
+                  </th>
+                ))}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <SkeletonRows />
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="empty-state">
+                      <div className="empty-icon">◫</div>
+                      <p>{search ? `No records match "${search}".` : 'No data found. Add records or run the ETL pipeline.'}</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginated.map(row => {
+                  const isEditing = editingId === row.order_id;
+                  const isSelected = selected.has(row.order_id);
+                  return (
+                    <tr key={row.order_id} className={`${isSelected ? 'row-selected' : ''} ${isEditing ? 'row-editing' : ''}`}>
+                      <td className="check-col">
+                        <input type="checkbox" checked={isSelected} onChange={() => toggleRow(row.order_id)} />
+                      </td>
+                      <td className="id-cell">
+                        <span className="order-pill">#{row.order_id}</span>
+                      </td>
+                      <td className="product-col">
+                        {isEditing
+                          ? <EditCell value={editForm.product} onChange={v => setEditForm(f => ({ ...f, product: v }))} placeholder="Product name" />
+                          : <span className="product-name">{row.product}</span>}
+                      </td>
+                      <td>
+                        {isEditing
+                          ? <EditCell type="number" value={editForm.quantity} onChange={v => setEditForm(f => ({ ...f, quantity: v }))} />
+                          : row.quantity?.toLocaleString()}
+                      </td>
+                      <td>
+                        {isEditing
+                          ? <EditCell type="number" value={editForm.price} onChange={v => setEditForm(f => ({ ...f, price: v }))} />
+                          : fmtUSD(row.price)}
+                      </td>
+                      <td className="total-col">
+                        {isEditing
+                          ? <span className="preview-total">{fmtUSD((+editForm.quantity || 0) * (+editForm.price || 0))}</span>
+                          : <strong>{fmtUSD(row.total_price)}</strong>}
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          {isEditing ? (
+                            <>
+                              <button className="action-btn save-btn" onClick={saveEdit} title="Save">✓</button>
+                              <button className="action-btn cancel-btn" onClick={() => setEditingId(null)} title="Cancel">✕</button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="action-btn edit-btn" onClick={() => startEdit(row)} title="Edit">✎</button>
+                              <button className="action-btn delete-btn" onClick={() => confirmDelete(row.order_id)} title="Delete">🗑</button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="dt-pagination">
+            <span className="page-info">
+              Page {page} of {totalPages}
+            </span>
+            <div className="page-btns">
+              <button className="page-btn" onClick={() => setPage(1)} disabled={page === 1}>«</button>
+              <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>‹</button>
+              {pageButtons.map((b, i) =>
+                b === '…'
+                  ? <span key={`ellipsis-${i}`} className="page-ellipsis">…</span>
+                  : <button key={b} className={`page-btn ${page === b ? 'active' : ''}`} onClick={() => setPage(b)}>{b}</button>
+              )}
+              <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>›</button>
+              <button className="page-btn" onClick={() => setPage(totalPages)} disabled={page === totalPages}>»</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

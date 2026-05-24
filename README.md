@@ -1,415 +1,278 @@
-# 📊 ETL Pipeline Dashboard
+# ⟡ DataFlow Studio
 
-A modern, full-stack Data Engineering ETL Pipeline with a beautiful React frontend and Flask backend API. This application allows you to extract, transform, and load sales data while providing real-time analytics and visualizations.
+**Real-Time ETL Pipeline & Analytics Platform**
 
-## 🚀 **NEW: Modernized Architecture Available!**
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Pandas](https://img.shields.io/badge/Pandas-2.2-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](LICENSE)
 
-This project has been modernized with enterprise-grade features including:
-- ✅ **Configuration Management** - Environment-based configuration
-- ✅ **Structured Logging** - JSON and text logging with context
-- ✅ **SQLAlchemy ORM** - Modern database abstraction layer
-- ✅ **Data Validation** - Pydantic models for request/response validation
-- ✅ **Data Quality Checks** - Automatic data quality validation and reporting
-- ✅ **Docker Support** - Containerization with Docker and Docker Compose
-- ✅ **Multiple Data Sources** - Support for CSV, JSON, Excel, APIs, and databases
-
-**👉 See [MODERNIZATION_GUIDE.md](MODERNIZATION_GUIDE.md) for details and migration instructions.**
-
-## ✨ Features
-
-### Core Features
-- **📈 Interactive Dashboard** - View key metrics and recent orders at a glance
-- **📋 Data Management** - Browse, search, sort, and manage sales records
-- **➕ Add New Records** - User-friendly form with validation
-- **✏️ Edit Records** - Inline editing directly in the data table
-- **📊 Analytics & Visualization** - Beautiful charts showing sales insights
-- **🚀 ETL Pipeline** - One-click ETL processing
-- **💾 Dual Storage** - Data stored in both CSV and SQLite database
-
-### Advanced Features
-- **🌙 Dark Mode** - Toggle between light and dark themes
-- **📄 Pagination** - Navigate through large datasets efficiently
-- **☑️ Bulk Operations** - Select and delete multiple records at once
-- **📥 CSV Import** - Upload CSV files to import multiple records
-- **📈 Time Series Charts** - Track revenue and orders over time
-- **🔔 Toast Notifications** - Modern, non-intrusive notifications
-- **🔍 Advanced Search** - Search by product name or order ID
-- **📊 Multiple Chart Types** - Bar, Line, Pie, and Area charts
-
-## 🛠️ Tech Stack
-
-### Backend
-- **Python 3.11+**
-- **Flask** - Web framework
-- **Pandas** - Data manipulation
-- **SQLite** - Database storage
-
-### Frontend
-- **React 18** - UI framework
-- **Recharts** - Data visualization
-- **Axios** - HTTP client
-- **React Hot Toast** - Toast notifications
-- **CSS3** - Modern styling with gradients and animations
-
-## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
-- Python 3.11 or higher
-- Node.js 16 or higher
-- npm or yarn
-
-## 🚀 Installation & Setup
-
-### Quick Start (Modernized App)
-
-```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Set up environment (optional - defaults work for local dev)
-cp .env.example .env
-
-# 3. Run modernized app
-python app_modern.py
-```
-
-**👉 See [QUICK_START_MODERN.md](QUICK_START_MODERN.md) for detailed quick start guide.**
-
-### Docker (Recommended for Production)
-
-```bash
-docker-compose up --build
-```
-
-### Traditional Setup
-
-### 1. Clone the Repository
-
-```bash
-git clone <your-repository-url>
-cd Data-Engineering-ETL-Pipeline-main
-```
-
-### 2. Backend Setup
-
-```bash
-# Install Python dependencies
-pip install -r requirements.txt
-```
-
-### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Build the React app
-npm run build
-
-# Go back to root directory
-cd ..
-```
-
-## ▶️ Running the Application
-
-### Start the Backend Server
-
-```bash
-python app.py
-```
-
-The server will start on `http://localhost:5000`
-
-Your dashboard will be accessible at: **http://localhost:5000**
-
-### Development Mode (Optional)
-
-If you want to run the frontend in development mode with hot-reload:
-
-```bash
-# In a separate terminal
-cd frontend
-npm start
-```
-
-This will start the React development server on `http://localhost:3000`
-
-## 📖 Usage Guide
-
-### Dashboard View
-- See total orders, revenue, average order value, and items sold
-- View the 5 most recent orders
-- Get an overview of your sales data
-- Toggle dark mode using the theme button in the header
-
-### Data Table
-- **Browse all sales records** with pagination (10, 25, 50, or 100 per page)
-- **Search** by product name or order ID
-- **Sort** by any column (click column headers)
-- **Select multiple records** using checkboxes
-- **Bulk delete** selected records
-- **Edit records** inline by clicking the edit button
-- **Delete individual records** with confirmation
-
-### Add Data
-- Fill in the form to add new sales records
-- Real-time validation
-- Automatic total price calculation
-- Instant feedback on submission
-- **CSV Import**: Upload a CSV file to import multiple records at once
-  - CSV should have columns: `order_id`, `product`, `quantity`, `price`
-
-### Analytics
-- **Revenue Over Time** - Area chart showing revenue trends
-- **Orders Over Time** - Line chart tracking order counts
-- **Revenue by Product** - Bar chart comparing product revenue
-- **Sales Distribution** - Pie chart showing revenue distribution
-- **Quantity Sold** - Bar chart of units sold per product
-- **Orders per Product** - Line chart of order frequency
-- **Product Performance Table** - Detailed summary with sortable columns
-
-### ETL Pipeline
-Click the "🚀 Run ETL Pipeline" button to:
-1. Extract data from CSV
-2. Transform data (calculate total_price)
-3. Load data into SQLite database
-
-## 📁 Project Structure
-
-```
-Data-Engineering-ETL-Pipeline-main/
-├── app.py                  # Flask backend server
-├── extract.py              # Data extraction module
-├── transform.py            # Data transformation module
-├── load_data.py           # CLI tool (legacy)
-├── requirements.txt        # Python dependencies
-├── sales.db               # SQLite database
-├── data/
-│   └── sample_sales.csv   # Sales data CSV
-├── api/
-│   └── index.py          # Vercel serverless function
-└── frontend/
-    ├── package.json       # Node dependencies
-    ├── public/
-    │   └── index.html
-    └── src/
-        ├── App.js         # Main React component
-        ├── App.css        # Main styles
-        ├── index.js       # React entry point
-        ├── index.css      # Global styles
-        └── components/
-            ├── Dashboard.js       # Dashboard component
-            ├── Dashboard.css
-            ├── DataTable.js       # Data table component
-            ├── DataTable.css
-            ├── AddDataForm.js     # Add data form
-            ├── AddDataForm.css
-            ├── Analytics.js       # Analytics & charts
-            └── Analytics.css
-```
-
-## 🔌 API Endpoints
-
-### GET `/api/health`
-Health check endpoint
-
-### GET `/api/data`
-Get all sales data with optional pagination and filtering
-- Query parameters:
-  - `page` (default: 1) - Page number
-  - `per_page` (default: 50) - Records per page
-  - `start_date` (optional) - Filter start date
-  - `end_date` (optional) - Filter end date
-
-### GET `/api/data/raw`
-Get raw sales data without transformation
-
-### POST `/api/data`
-Add new sales record
-```json
-{
-  "order_id": 101,
-  "product": "Laptop",
-  "quantity": 2,
-  "price": 999.99
-}
-```
-
-### PUT `/api/data/<order_id>`
-Update a sales record
-```json
-{
-  "product": "Laptop Pro",
-  "quantity": 3,
-  "price": 1299.99
-}
-```
-
-### DELETE `/api/data/<order_id>`
-Delete a sales record
-
-### POST `/api/data/bulk-delete`
-Delete multiple sales records
-```json
-{
-  "order_ids": [101, 102, 103]
-}
-```
-
-### POST `/api/data/import`
-Import data from CSV file
-- Content-Type: `multipart/form-data`
-- File field: `file`
-
-### POST `/api/etl/run`
-Run the complete ETL pipeline
-
-### GET `/api/analytics/products`
-Get product-wise analytics
-
-### GET `/api/analytics/timeseries`
-Get time series analytics (revenue and orders over time)
-
-## 🎨 UI Features
-
-### Dark Mode
-- Toggle between light and dark themes
-- Preference saved in localStorage
-- Smooth transitions between themes
-- All components support dark mode
-
-### Responsive Design
-- **Desktop**: Full layout with all features
-- **Tablet**: Optimized 2-column layouts
-- **Mobile**: Single column, touch-friendly interface
-
-### Notifications
-- Toast notifications for all actions
-- Success, error, and info messages
-- Auto-dismiss after a few seconds
-- Non-intrusive design
-
-### Data Table Features
-- **Pagination**: Navigate through pages
-- **Sorting**: Click column headers to sort
-- **Search**: Real-time filtering
-- **Selection**: Checkbox selection for bulk operations
-- **Inline Editing**: Edit records directly in the table
-- **Bulk Delete**: Delete multiple records at once
-
-### Charts & Visualizations
-- **Interactive Charts**: Hover for details
-- **Responsive**: Adapts to screen size
-- **Multiple Types**: Bar, Line, Pie, Area charts
-- **Time Series**: Track trends over time
-- **Export Ready**: Professional quality visualizations
-
-## 🎯 Key Features Explained
-
-### Edit Records
-1. Click the ✏️ edit button on any row
-2. Modify the fields inline
-3. Click ✓ to save or ✕ to cancel
-4. Changes are saved immediately
-
-### Bulk Operations
-1. Select records using checkboxes
-2. Use "Select All" to select all visible records
-3. Click "Delete Selected" to remove multiple records
-4. Confirmation dialog prevents accidental deletions
-
-### CSV Import
-1. Go to "Add Data" tab
-2. Click "Choose CSV File" in the import section
-3. Select a CSV file with columns: order_id, product, quantity, price
-4. Records are imported automatically
-5. Duplicate order_ids are handled (last one wins)
-
-### Pagination
-- Choose records per page: 10, 25, 50, or 100
-- Navigate using Previous/Next buttons
-- Jump to specific pages using page numbers
-- Page info shows current page and total pages
-
-## 🔧 Development
-
-### Running in Development Mode
-
-**Backend:**
-```bash
-python app.py
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm start
-```
-
-### Building for Production
-
-```bash
-cd frontend
-npm run build
-```
-
-The built files will be in `frontend/build/` and served by Flask.
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Port already in use**
-   - Change the port in `app.py`: `app.run(debug=True, port=5001)`
-
-2. **Module not found errors**
-   - Ensure all dependencies are installed: `pip install -r requirements.txt`
-   - For frontend: `cd frontend && npm install`
-
-3. **Database errors**
-   - Delete `sales.db` and restart the server (it will be recreated)
-
-4. **CSV import fails**
-   - Ensure CSV has correct columns: order_id, product, quantity, price
-   - Check file encoding (should be UTF-8)
-
-## 📝 Data Format
-
-### CSV Format
-```csv
-order_id,product,quantity,price
-1,Laptop,2,999.99
-2,Mouse,5,29.99
-3,Keyboard,3,79.99
-```
-
-### JSON Format (API)
-```json
-{
-  "order_id": 1,
-  "product": "Laptop",
-  "quantity": 2,
-  "price": 999.99
-}
-```
-
-## 🚀 Deployment
-
-### Vercel Deployment
-The project includes Vercel configuration. See `vercel.json` and `api/index.py` for serverless function setup.
-
-### Other Platforms
-- **Heroku**: Use Procfile and requirements.txt
-- **Docker**: Create Dockerfile for containerized deployment
-- **AWS/GCP**: Use standard Flask deployment practices
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+DataFlow Studio is a **production-grade, full-stack ETL pipeline** with a real-time analytics dashboard. It ingests raw CSV data, applies configurable validation and transformation rules, persists results to SQLite, and exposes a versioned REST API — all wrapped in a modern React frontend with live pipeline monitoring, data quality scoring, and interactive visualisations.
 
 ---
 
-**Enjoy managing your sales data with style! 🎉**
+## ✨ Features
+
+| Category | Highlights |
+|---|---|
+| **Backend Engineering** | Clean Flask REST API · Retry with exponential backoff · Background async job processing (threading) · ETL job history in SQLite · Structured logging · Request-ID tracing · CORS + security headers |
+| **ETL Core** | Extract (CSV / JSON / Excel) · Schema validation · Data quality scoring · Duplicate detection · Configurable transformations · Batch processing |
+| **Analytics API** | Per-product aggregations · Time-series revenue · Top-N rankings · Data quality reports |
+| **React Frontend** | Dashboard with 6 KPI cards · Pipeline Monitor with step visualiser · Interactive Recharts charts · Inline record editing · CSV import/export · Skeleton loaders · Dark mode |
+| **DevOps** | Vercel serverless (Python 3.12) · Multi-stage Docker build · docker-compose · `.env` configuration management · Health check endpoint |
+
+---
+
+## 🏗 Architecture
+
+```
+dataflow-studio/
+├── api/
+│   ├── index.py            ← Vercel serverless entry — complete Flask app
+│   └── requirements.txt    ← Minimal Vercel deps (Flask, Pandas)
+├── backend/
+│   ├── core/               ← Extract · Transform · Load modules
+│   ├── models/             ← SQLAlchemy models, Pydantic schemas
+│   └── utils/              ← Logger, retry decorator
+├── frontend/
+│   └── src/
+│       ├── services/api.js ← Axios client with retry interceptors
+│       └── components/     ← Dashboard · Pipeline · DataTable · Analytics · AddDataForm
+├── data/sample_sales.csv   ← Seed dataset (50 records)
+├── .env.example            ← Environment variable template
+├── vercel.json             ← Vercel deployment config
+└── Dockerfile              ← Multi-stage build
+```
+
+**Data flow:**
+```
+CSV / Upload
+    │
+    ▼ Extract (pandas.read_csv + encoding handling)
+    │
+    ▼ Transform (type coercion · dedup · validation · quality scoring)
+    │
+    ▼ Load (SQLite via sqlite3 with WAL mode + retry)
+    │
+    ▼ REST API  →  React Dashboard
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.10+, Node.js 18+
+
+### 1. Clone & install
+
+```bash
+git clone https://github.com/your-username/dataflow-studio.git
+cd dataflow-studio
+
+# Python deps
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Node deps
+cd frontend && npm install && cd ..
+```
+
+### 2. Configure
+
+```bash
+cp .env.example .env
+# Edit .env — defaults work out of the box for local dev
+```
+
+### 3. Run
+
+**Dev (two terminals):**
+```bash
+# Terminal 1 — API
+python api/index.py
+
+# Terminal 2 — React dev server with hot reload
+cd frontend && npm start
+# Open http://localhost:3000
+```
+
+**Production build (single server):**
+```bash
+cd frontend && npm run build && cd ..
+python api/index.py
+# Open http://localhost:5000
+```
+
+**Docker:**
+```bash
+docker compose up --build
+# Open http://localhost:5000
+```
+
+---
+
+## 🌐 Deploy to Vercel
+
+### Option A — Vercel Dashboard (recommended)
+
+1. Push your fork to GitHub.
+2. Go to [vercel.com/new](https://vercel.com/new) → import your repo.
+3. Vercel reads `vercel.json` automatically. Click **Deploy**.
+
+### Option B — Vercel CLI
+
+```bash
+npm i -g vercel
+vercel login
+
+vercel          # preview deployment
+vercel --prod   # production deployment
+```
+
+### Environment variables (set in Vercel dashboard)
+
+| Variable | Example Value |
+|---|---|
+| `ENVIRONMENT` | `production` |
+| `SECRET_KEY` | *(generate: `python -c "import secrets; print(secrets.token_hex(32))"`)* |
+| `CORS_ORIGINS` | `https://your-app.vercel.app` |
+
+> **Vercel note:** Vercel's filesystem is read-only except `/tmp`. The API automatically detects `VERCEL=1` and redirects data files and SQLite to `/tmp`.
+
+---
+
+## 📡 API Reference
+
+Base: `http://localhost:5000` · Production: `https://your-app.vercel.app`
+
+### Health
+
+```http
+GET  /api/health      → service info + db status
+GET  /api/status      → active jobs, recent runs, data file info
+```
+
+### Records
+
+```http
+GET    /api/data                  → list (page, per_page, product, sort_by, sort_order)
+GET    /api/data/:order_id        → single record
+POST   /api/data                  → create  { order_id, product, quantity, price }
+PUT    /api/data/:order_id        → update  { product?, quantity?, price? }
+DELETE /api/data/:order_id        → delete
+POST   /api/data/bulk-delete      → { order_ids: [1,2,3] }
+POST   /api/data/import           → multipart CSV upload
+GET    /api/data/export           → download CSV
+```
+
+### Analytics
+
+```http
+GET  /api/analytics/overview     → stats + quality report
+GET  /api/analytics/products     → per-product aggregations
+GET  /api/analytics/timeseries   → daily revenue/orders
+GET  /api/analytics/summary      → top-N products (?top=5)
+```
+
+### ETL Pipeline
+
+```http
+POST /api/etl/run                 → { mode: "sync"|"async", triggered_by: "..." }
+GET  /api/etl/status/:job_id      → poll async job
+GET  /api/etl/history             → last N jobs (?limit=20)
+```
+
+**Typical ETL run response:**
+```json
+{
+  "success": true,
+  "data": {
+    "job_id": "job_20250101_120000_abc123",
+    "status": "completed",
+    "records_extracted": 50,
+    "records_transformed": 48,
+    "records_loaded": 48,
+    "quality_score": 0.96,
+    "quality_percentage": 96.0,
+    "duration_seconds": 0.142
+  }
+}
+```
+
+---
+
+## 🔧 Configuration
+
+All settings via environment variables (see `.env.example`):
+
+```ini
+ENVIRONMENT=development        # development | production
+DEBUG=true
+PORT=5000
+SECRET_KEY=change-me
+CORS_ORIGINS=http://localhost:3000
+DATABASE_URL=sqlite:///dataflow.db
+DATA_FILE=data/sample_sales.csv
+LOG_LEVEL=INFO
+ETL_MAX_RETRIES=3
+ETL_RETRY_DELAY=0.5
+```
+
+---
+
+## 📊 Sample Dataset
+
+Shipped in `data/sample_sales.csv` — 50 orders across 5 product categories. To load your own data, use the **Import CSV** button on the Data Table page.
+
+**Required CSV columns:**
+
+| Column | Type | Description |
+|---|---|---|
+| `order_id` | integer | Unique positive identifier |
+| `product` | string | Product name or SKU |
+| `quantity` | integer | Units sold |
+| `price` | float | Unit price (USD) |
+
+*Optional:* `category`, `created_at`
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| API Server | Python 3.12 · Flask 3.0 · flask-cors |
+| Data Processing | Pandas 2.2 · NumPy |
+| Database | SQLite (WAL mode) · SQLAlchemy |
+| Validation | Pydantic v2 |
+| Frontend | React 18 · Recharts · react-hot-toast |
+| Deployment | Vercel Serverless Functions (Python runtime) |
+| Containers | Docker · Docker Compose |
+
+---
+
+## 🗺 Roadmap
+
+- [ ] PostgreSQL / PlanetScale for persistent production storage
+- [ ] Cron-triggered scheduled ETL jobs
+- [ ] Multi-source: REST APIs, Amazon S3, Google Sheets
+- [ ] JWT-based authentication
+- [ ] Prometheus `/metrics` endpoint
+- [ ] Row-level audit trail
+
+---
+
+## 👤 Author
+
+**Ralph** — Final-year CSE student · Backend & Data Engineering
+
+📧 ralpher98@gmail.com
+
+---
+
+## 📄 License
+
+MIT © 2025 Ralph

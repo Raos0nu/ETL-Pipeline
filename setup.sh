@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "ETL Pipeline Dashboard Setup"
+echo "DataFlow Studio — Setup"
 echo "========================================"
 echo ""
 
@@ -11,15 +11,11 @@ if [ $? -ne 0 ]; then
     echo "Error: Failed to install Python dependencies"
     exit 1
 fi
-echo "Python dependencies installed successfully!"
+echo "Python dependencies installed!"
 echo ""
 
 echo "[2/4] Setting up frontend..."
-cd frontend
-if [ $? -ne 0 ]; then
-    echo "Error: Frontend directory not found"
-    exit 1
-fi
+cd frontend || { echo "Error: frontend directory not found"; exit 1; }
 
 echo "[3/4] Installing Node.js dependencies..."
 npm install
@@ -27,7 +23,7 @@ if [ $? -ne 0 ]; then
     echo "Error: Failed to install Node.js dependencies"
     exit 1
 fi
-echo "Node.js dependencies installed successfully!"
+echo "Node.js dependencies installed!"
 echo ""
 
 echo "[4/4] Building React application..."
@@ -36,19 +32,18 @@ if [ $? -ne 0 ]; then
     echo "Error: Failed to build React application"
     exit 1
 fi
-echo "React application built successfully!"
+echo "React application built!"
 echo ""
 
 cd ..
 
 echo "========================================"
-echo "Setup Complete! 🎉"
+echo "Setup Complete!"
 echo "========================================"
 echo ""
 echo "To start the application, run:"
-echo "  python app.py"
+echo "  python api/index.py"
 echo ""
 echo "Then open your browser to:"
 echo "  http://localhost:5000"
 echo ""
-

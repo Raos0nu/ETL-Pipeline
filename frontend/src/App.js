@@ -1,202 +1,271 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Toaster, toast } from 'react-hot-toast';
 import './App.css';
-import Dashboard from './components/Dashboard';
-import DataTable from './components/DataTable';
-import AddDataForm from './components/AddDataForm';
-import Analytics from './components/Analytics';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import Dashboard    from './components/Dashboard';
+import DataTable    from './components/DataTable';
+import AddDataForm  from './components/AddDataForm';
+import Analytics    from './components/Analytics';
+import Pipeline     from './components/Pipeline';
+import {
+  getData, createRecord, updateRecord, deleteRecord,
+  bulkDeleteRecords, runETL,
+} from './services/api';
 
-function App() {
-  const [salesData, setSalesData] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
+// ── Navigation tabs ──────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'dashboard', label: 'Dashboard',     icon: '◈' },
+  { id: 'pipeline',  label: 'Pipeline',      icon: '⚡' },
+  { id: 'data',      label: 'Data Table',    icon: '⊞'  },
+  { id: 'add',       label: 'Add Record',    icon: '+'  },
+  { id: 'analytics', label: 'Analytics',     icon: '∿'  },
+];
 
+export default function App() {
+  const [salesData,  setSalesData]  = useState([]);
+  const [stats,      setStats]      = useState(null);
+  const [quality,    setQuality]    = useState(null);
+  const [loading,    setLoading]    = useState(false);
+  const [activeTab,  setActiveTab]  = useState('dashboard');
+  const [darkMode,   setDarkMode]   = useState(
+    () => localStorage.getItem('df-dark') === 'true'
+  );
+  const [etlRunning, setEtlRunning] = useState(false);
+
+  // ── Dark mode sync ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
-    localStorage.setItem('darkMode', darkMode);
+    document.documentElement.classList.toggle('dark-mode', darkMode);
+    localStorage.setItem('df-dark', darkMode);
   }, [darkMode]);
 
-  const fetchData = useCallback(async (page = 1, perPage = 10000) => {
-    setLoading(true);
+  // ── Fetch data ───────────────────────────────────────────────────────────
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
-      const response = await axios.get(`/api/data?page=${page}&per_page=${perPage}`);
-      if (response.data.success) {
-        setSalesData(response.data.data);
-        setStats(response.data.stats);
-        return response.data.pagination;
+      const res = await getData({ page: 1, per_page: 10000 });
+      if (res.data.success) {
+        setSalesData(res.data.data     || []);
+        setStats(res.data.stats        || null);
+        setQuality(res.data.quality_report || null);
       }
-    } catch (error) {
-      toast.error('Error fetching data: ' + error.message);
+    } catch (e) {
+      if (!silent) toast.error(e.message || 'Failed to fetch data');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // ── CRUD handlers ────────────────────────────────────────────────────────
+  const handleAdd = useCallback(async (payload) => {
+    try {
+      const res = await createRecord(payload);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Record created!');
+        fetchData(true);
+        return true;
+      }
+    } catch (e) {
+      toast.error(e.message || 'Failed to create record');
+    }
+    return false;
   }, [fetchData]);
 
-  const handleAddData = async (newData) => {
+  const handleUpdate = useCallback(async (orderId, payload) => {
     try {
-      const response = await axios.post('/api/data', newData);
-      if (response.data.success) {
-        toast.success('Data added successfully!');
-        fetchData();
+      const res = await updateRecord(orderId, payload);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Record updated!');
+        fetchData(true);
         return true;
       }
-    } catch (error) {
-      toast.error('Error adding data: ' + error.message);
-      return false;
+    } catch (e) {
+      toast.error(e.message || 'Failed to update record');
     }
-  };
+    return false;
+  }, [fetchData]);
 
-  const handleUpdateData = async (orderId, updatedData) => {
+  const handleDelete = useCallback(async (orderId) => {
     try {
-      const response = await axios.put(`/api/data/${orderId}`, updatedData);
-      if (response.data.success) {
-        toast.success('Data updated successfully!');
-        fetchData();
-        return true;
+      const res = await deleteRecord(orderId);
+      if (res.data.success) {
+        toast.success(res.data.message || 'Record deleted');
+        fetchData(true);
       }
-    } catch (error) {
-      toast.error('Error updating data: ' + error.message);
-      return false;
+    } catch (e) {
+      toast.error(e.message || 'Failed to delete record');
     }
-  };
+  }, [fetchData]);
 
-  const handleDeleteData = async (orderId) => {
+  const handleBulkDelete = useCallback(async (orderIds) => {
     try {
-      const response = await axios.delete(`/api/data/${orderId}`);
-      if (response.data.success) {
-        toast.success('Data deleted successfully!');
-        fetchData();
+      const res = await bulkDeleteRecords(orderIds);
+      if (res.data.success) {
+        toast.success(res.data.message || `${orderIds.length} records deleted`);
+        fetchData(true);
       }
-    } catch (error) {
-      toast.error('Error deleting data: ' + error.message);
+    } catch (e) {
+      toast.error(e.message || 'Bulk delete failed');
     }
-  };
+  }, [fetchData]);
 
-  const handleBulkDelete = async (orderIds) => {
+  // ── ETL trigger ──────────────────────────────────────────────────────────
+  const handleRunETL = useCallback(async () => {
+    setEtlRunning(true);
+    const tid = toast.loading('Running ETL pipeline…');
     try {
-      const response = await axios.post('/api/data/bulk-delete', { order_ids: orderIds });
-      if (response.data.success) {
-        toast.success(`${response.data.deleted_count} record(s) deleted successfully!`);
-        fetchData();
+      const res = await runETL('sync', 'header-button');
+      if (res.data.success) {
+        const d = res.data.data || {};
+        toast.success(
+          `Pipeline complete — ${d.records_loaded ?? d.records_processed ?? '?'} records loaded`,
+          { id: tid, duration: 4000 }
+        );
+        fetchData(true);
       }
-    } catch (error) {
-      toast.error('Error deleting data: ' + error.message);
-    }
-  };
-
-  const handleRunETL = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.post('/api/etl/run');
-      if (response.data.success) {
-        toast.success(`ETL Pipeline completed! Processed ${response.data.records_processed} records`);
-        fetchData();
-      }
-    } catch (error) {
-      toast.error('Error running ETL: ' + error.message);
+    } catch (e) {
+      toast.error(e.message || 'ETL pipeline failed', { id: tid });
     } finally {
-      setLoading(false);
+      setEtlRunning(false);
     }
-  };
+  }, [fetchData]);
 
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="App">
-      <header className="app-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1>📊 ETL Pipeline Dashboard</h1>
-            <p>Sales Data Management System</p>
+    <div className="app">
+      {/* Gradient mesh background */}
+      <div className="app-bg" aria-hidden="true" />
+
+      {/* ── HEADER ── */}
+      <header className="app-header glass">
+        <div className="header-inner">
+          <div className="brand">
+            <div className="brand-logo">
+              <span className="brand-icon">⟡</span>
+            </div>
+            <div className="brand-text">
+              <span className="brand-name">DataFlow</span>
+              <span className="brand-tag">Studio</span>
+            </div>
+            <span className="brand-version">v2.0</span>
           </div>
+
+          <nav className="tab-nav" role="navigation" aria-label="Main navigation">
+            {TABS.map(t => (
+              <button
+                key={t.id}
+                className={`tab-btn ${activeTab === t.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(t.id)}
+                aria-current={activeTab === t.id ? 'page' : undefined}
+              >
+                <span className="tab-icon">{t.icon}</span>
+                <span className="tab-label">{t.label}</span>
+              </button>
+            ))}
+          </nav>
+
           <div className="header-actions">
-            <button 
-              className="theme-toggle"
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-            <button 
-              className="etl-button"
+            {quality && (
+              <div
+                className={`quality-badge ${
+                  quality.quality_percentage >= 95 ? 'badge-success' :
+                  quality.quality_percentage >= 80 ? 'badge-warning' : 'badge-danger'
+                } badge`}
+                title={`Data quality score: ${quality.quality_percentage}%`}
+              >
+                ◎ {quality.quality_percentage}%
+              </div>
+            )}
+            <button
+              className={`btn-etl ${etlRunning ? 'loading' : ''}`}
               onClick={handleRunETL}
-              disabled={loading}
+              disabled={etlRunning}
+              title="Run ETL pipeline"
             >
-              {loading ? '⏳ Running...' : '🚀 Run ETL Pipeline'}
+              {etlRunning
+                ? <><span className="spinner" /> Processing…</>
+                : <><span>⚡</span> Run Pipeline</>
+              }
+            </button>
+            <button
+              className="btn-icon"
+              onClick={() => setDarkMode(d => !d)}
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? '☀' : '◑'}
             </button>
           </div>
         </div>
       </header>
 
-      <nav className="tab-navigation">
-        <button 
-          className={activeTab === 'dashboard' ? 'active' : ''} 
-          onClick={() => setActiveTab('dashboard')}
-        >
-          📈 Dashboard
-        </button>
-        <button 
-          className={activeTab === 'data' ? 'active' : ''} 
-          onClick={() => setActiveTab('data')}
-        >
-          📋 Data Table
-        </button>
-        <button 
-          className={activeTab === 'add' ? 'active' : ''} 
-          onClick={() => setActiveTab('add')}
-        >
-          ➕ Add Data
-        </button>
-        <button 
-          className={activeTab === 'analytics' ? 'active' : ''} 
-          onClick={() => setActiveTab('analytics')}
-        >
-          📊 Analytics
-        </button>
-      </nav>
+      {/* ── MAIN ── */}
+      <main className="app-main">
+        {loading && (
+          <div className="page-loader">
+            <div className="loader-bar" />
+          </div>
+        )}
 
-      <main className="main-content">
-        {loading && <div className="loading-overlay">Loading...</div>}
-        
-        {activeTab === 'dashboard' && (
-          <Dashboard stats={stats} salesData={salesData} />
-        )}
-        
-        {activeTab === 'data' && (
-          <DataTable 
-            data={salesData} 
-            onDelete={handleDeleteData}
-            onUpdate={handleUpdateData}
-            onBulkDelete={handleBulkDelete}
-            fetchData={fetchData}
-          />
-        )}
-        
-        {activeTab === 'add' && (
-          <AddDataForm onAdd={handleAddData} fetchData={fetchData} />
-        )}
-        
-        {activeTab === 'analytics' && (
-          <Analytics salesData={salesData} />
-        )}
+        <div className="page-content animate-fade-in" key={activeTab}>
+          {activeTab === 'dashboard' && (
+            <Dashboard
+              stats={stats}
+              quality={quality}
+              salesData={salesData}
+              onRunETL={handleRunETL}
+              etlRunning={etlRunning}
+            />
+          )}
+          {activeTab === 'pipeline' && (
+            <Pipeline onDataRefresh={() => fetchData(true)} />
+          )}
+          {activeTab === 'data' && (
+            <DataTable
+              data={salesData}
+              loading={loading}
+              onDelete={handleDelete}
+              onUpdate={handleUpdate}
+              onBulkDelete={handleBulkDelete}
+              onRefresh={() => fetchData()}
+            />
+          )}
+          {activeTab === 'add' && (
+            <AddDataForm onAdd={handleAdd} />
+          )}
+          {activeTab === 'analytics' && (
+            <Analytics salesData={salesData} />
+          )}
+        </div>
       </main>
 
+      {/* ── FOOTER ── */}
       <footer className="app-footer">
-        <p>© 2025 ETL Pipeline Dashboard | Built with React & Flask</p>
+        <span>© 2025 DataFlow Studio</span>
+        <span className="footer-sep">·</span>
+        <span>Real-Time ETL Pipeline & Analytics</span>
+        <span className="footer-sep">·</span>
+        <span>Built with React &amp; Flask</span>
       </footer>
+
+      {/* Toast notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            borderRadius: '12px',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-base)',
+            boxShadow: 'var(--shadow-lg)',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px',
+          },
+          success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+          duration: 3500,
+        }}
+      />
     </div>
   );
 }
-
-export default App;
-

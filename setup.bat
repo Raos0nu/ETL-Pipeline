@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo ETL Pipeline Dashboard Setup
+echo DataFlow Studio -- Setup
 echo ========================================
 echo.
 
@@ -11,7 +11,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b %errorlevel%
 )
-echo Python dependencies installed successfully!
+echo Python dependencies installed!
 echo.
 
 echo [2/4] Setting up frontend...
@@ -29,7 +29,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b %errorlevel%
 )
-echo Node.js dependencies installed successfully!
+echo Node.js dependencies installed!
 echo.
 
 echo [4/4] Building React application...
@@ -39,20 +39,19 @@ if %errorlevel% neq 0 (
     pause
     exit /b %errorlevel%
 )
-echo React application built successfully!
+echo React application built!
 echo.
 
 cd ..
 
 echo ========================================
-echo Setup Complete! 🎉
+echo Setup Complete!
 echo ========================================
 echo.
 echo To start the application, run:
-echo   python app.py
+echo   python api/index.py
 echo.
 echo Then open your browser to:
 echo   http://localhost:5000
 echo.
 pause
-
